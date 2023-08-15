@@ -130,23 +130,23 @@ CORE SYNTHDEFS FOR DIRT
 	// thanks to Jost Muxfeld and James McCartney
 	// note that "size" is not room size, just the feed level into the room
 
-	SynthDef("dirt_reverb" ++ numChannels, { |dryBus, effectBus, gate = 1, room = 0, size = 0.1, dry = 0|
+	SynthDef("dirt_reverb" ++ ~dirt.numChannels, { |dryBus, effectBus, gate = 1, room = 0, size = 0.1, dry = 0|
 		var in, snd, loop, depth;
 
-		in = In.ar(dryBus, numChannels).asArray.sum;
+		in = In.ar(dryBus, ~dirt.numChannels);
 
 		in = in * room.lag(LFNoise1.kr(1).range(0.01, 0.02)); // regulate input
 
-		4.do { in = AllpassN.ar(in, 0.03, { Rand(0.005, 0.02) }.dup(numChannels), 1) };
+		4.do { in = AllpassN.ar(in, 0.03, { Rand(0.005, 0.02) }, 1) };
 
 		depth = size.lag(0.02).linexp(0, 1, 0.01, 0.98); // change depth between 0.1 and 0.98
-		loop = LocalIn.ar(numChannels) * { depth + Rand(0, 0.05) }.dup(numChannels);
+		loop = LocalIn.ar(~dirt.numChannels) * { depth + Rand(0, 0.05) };
 		loop = OnePole.ar(loop, 0.5);  // 0-1
 
-		loop = AllpassN.ar(loop, 0.05, { Rand(0.01, 0.05) }.dup(numChannels), 2);
+		loop = AllpassN.ar(loop, 0.05, { Rand(0.01, 0.05) }, 2);
 
 		loop = DelayN.ar(loop, 0.3, [0.19, 0.26] + { Rand(-0.003, 0.003) }.dup(2));
-		loop = AllpassN.ar(loop, 0.05, { Rand(0.03, 0.15) }.dup(numChannels), 2);
+		loop = AllpassN.ar(loop, 0.05, { Rand(0.03, 0.15) }, 2);
 
 		loop = loop + in;
 		loop = LeakDC.ar(loop);
@@ -162,6 +162,55 @@ CORE SYNTHDEFS FOR DIRT
 
 		Out.ar(effectBus, snd);
 
+	}, [\ir, \ir]).add;
+
+	SynthDef("schroeder_reverb" ++ ~dirt.numChannels, { |dryBus, effectBus, scReverb, ice, damp|
+		var signal = In.ar(dryBus, ~dirt.numChannels);
+		var chain, in, z, y, oct, gate = 1;
+
+		z = DelayN.ar(signal, 0.048);
+		y = Mix.ar(Array.fill(7,{ CombL.ar(z, 0.1, 1, 15) }));
+		// 32.do({ y = AllpassN.ar(y, 0.050, [0.050.rand, 0.050.rand], 1) });
+		32.do({ y = AllpassN.ar(y, 0.02, [0.02.rand, 0.02.rand], 1) });
+		oct = 1.0 * LeakDC.ar( abs(y) );
+		y = SelectX.ar(ice, [y, ice * oct, DC.ar(0)]);
+		signal = ((1-damp)*signal) + (0.2*y*scReverb);
+
+		signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
+
+		DirtPause.ar(signal, graceTime:4);
+
+		Out.ar(effectBus, signal);
+	}, [\ir, \ir]).add;
+
+	SynthDef("pingpong_delay" ++ ~dirt.numChannels, { |dryBus, effectBus, pingpongt, pingpongfb, pingpong, cps = 1|
+		var signal = In.ar(dryBus, ~dirt.numChannels);
+		var maxDelayTime = 4;
+		var delaytime, delayfeedback, delayAmp, decayTime, left, right, dry, pingponglpf=3000, leftD, rightD, gate = 1;
+
+		delayAmp = pingpong;
+		delaytime = pingpongt;
+		delayfeedback = pingpongfb;
+
+		delayfeedback = delayfeedback.clip(0, 0.99);
+		delaytime = delaytime * reciprocal(cps);
+		delaytime = delaytime.clip(0, maxDelayTime); // just to be sure
+		decayTime = log2(-60.dbamp) / log2(delayfeedback) * delaytime;
+		decayTime = decayTime.clip(0, 20);
+
+		dry = signal;
+		right = CombL.ar(dry, maxDelayTime*2, delaytime.lag(0.05)*2, decayTime);
+		right = LPF.ar(right, pingponglpf);
+		left = DelayN.ar(dry + right, maxDelayTime, delaytime.lag(0.05));
+		leftD = Rand(0, 1);
+		rightD = Rand(0, 1);
+		signal = NumChannels.ar(signal + [left*delayAmp*leftD, right*delayAmp*rightD, left*delayAmp*(1-leftD), right*delayAmp*(1-rightD)], ~dirt.numChannels);
+
+		signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
+
+		DirtPause.ar(signal, graceTime:4);
+
+		Out.ar(effectBus, signal);
 	}, [\ir, \ir]).add;
 
 

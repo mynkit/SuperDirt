@@ -60,6 +60,9 @@ DirtOrbit {
 			// all global effects sleep when the input is quiet for long enough and no parameters are set.
 			GlobalDirtEffect(\dirt_delay, [\delaytime, \delayfeedback, \delaySend, \delayAmp, \lock, \cps]),
 			GlobalDirtEffect(\dirt_reverb, [\size, \room, \dry]),
+			GlobalDirtEffect(\schroeder_reverb, [\scReverb, \ice, \damp]),
+			// GlobalDirtEffect(\freeverb, [\size, \freeverb, \damp]),
+			GlobalDirtEffect(\pingpong_delay, [\pingpongt, \pingpongfb, \pingpong, \cps]),
 			GlobalDirtEffect(\dirt_leslie, [\leslie, \lrate, \lsize]),
 			GlobalDirtEffect(\dirt_rms, [\rmsReplyRate, \rmsPeakLag]).alwaysRun_(true),
 			GlobalDirtEffect(\dirt_monitor, [\limitertype]).alwaysRun_(true),
