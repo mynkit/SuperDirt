@@ -4,9 +4,9 @@ ORBIT BASED (GLOBAL)
 CORE SYNTHDEFS FOR DIRT
 (REQUIRED: GlobalDirtEffects)
 
-	Global synth defs: these synths run in each DirtOrbit and are only released when it is stopped
-	when you change them, to update them, hit cmd-period (i.e. stop the synths on the server) once.
-	they'll come back automatically
+Global synth defs: these synths run in each DirtOrbit and are only released when it is stopped
+when you change them, to update them, hit cmd-period (i.e. stop the synths on the server) once.
+they'll come back automatically
 
 */
 
@@ -198,19 +198,43 @@ CORE SYNTHDEFS FOR DIRT
 		decayTime = log2(-60.dbamp) / log2(delayfeedback) * delaytime;
 		decayTime = decayTime.clip(0, 20);
 
-		dry = signal;
-		right = CombL.ar(dry, maxDelayTime*2, delaytime.lag(0.05)*2, decayTime);
-		right = LPF.ar(right, pingponglpf);
-		left = DelayN.ar(dry + right, maxDelayTime, delaytime.lag(0.05));
-		leftD = Rand(0, 1);
-		rightD = Rand(0, 1);
-		signal = NumChannels.ar(signal + [left*delayAmp*leftD, right*delayAmp*rightD, left*delayAmp*(1-leftD), right*delayAmp*(1-rightD)], ~dirt.numChannels);
+		switch(numChannels,
+			2, {
+				dry = signal;
+				right = CombL.ar(dry, maxDelayTime*2, delaytime.lag(0.05)*2, decayTime);
+				right = LPF.ar(right, pingponglpf);
+				left = DelayN.ar(dry + right, maxDelayTime, delaytime.lag(0.05));
+				leftD = Rand(0, 1);
+				rightD = Rand(0, 1);
+				signal = NumChannels.ar(signal + [left*delayAmp*leftD, right*delayAmp*rightD, left*delayAmp*(1-leftD), right*delayAmp*(1-rightD)], ~dirt.numChannels);
 
-		signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
+				signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
 
-		DirtPause.ar(signal, graceTime:4);
+				DirtPause.ar(signal, graceTime:4);
 
-		Out.ar(effectBus, signal);
+				Out.ar(effectBus, signal)
+			},
+			4, {
+				dry = signal;
+				right = CombL.ar(dry, maxDelayTime*2, delaytime.lag(0.05)*2, decayTime);
+				right = LPF.ar(right, pingponglpf);
+				left = DelayN.ar(dry + right, maxDelayTime, delaytime.lag(0.05));
+				leftD = Rand(0, 1);
+				rightD = Rand(0, 1);
+				signal = NumChannels.ar(signal + [left*delayAmp*leftD, right*delayAmp*rightD, left*delayAmp*(1-leftD), right*delayAmp*(1-rightD)], ~dirt.numChannels);
+
+				signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
+
+				DirtPause.ar(signal, graceTime:4);
+
+				Out.ar(effectBus, signal)
+
+			},{
+				// それ以外のチャンネル数のときはなにもせずに返す
+				Out.ar(effectBus, signal)
+			}
+		)
+
 	}, [\ir, \ir]).add;
 
 
@@ -260,5 +284,5 @@ CORE SYNTHDEFS FOR DIRT
 
 	"---- core synth defs loaded ----".postln;
 
-}.value
+	}.value
 );

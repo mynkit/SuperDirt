@@ -217,13 +217,13 @@ this may be refacored later.
 
 // add Effect
 ~dirt.addModule('HRTF',
-  { |dirtEvent|
-		dirtEvent.sendSynth('HRTF' ++ numChannels,
+	{ |dirtEvent|
+		dirtEvent.sendSynth('HRTF' ++ ~numChannels,
 			[
 				theta: ~theta,
 				dis: ~dis,
 				out: ~out
-    ])
+		])
 }, { ~theta.notNil });
 
 );
