@@ -183,8 +183,8 @@ they'll come back automatically
 		Out.ar(effectBus, signal);
 	}, [\ir, \ir]).add;
 
-	SynthDef("pingpong_delay" ++ ~dirt.numChannels, { |dryBus, effectBus, pingpongt, pingpongfb, pingpong, cps = 1|
-		var signal = In.ar(dryBus, ~dirt.numChannels);
+	SynthDef("pingpong_delay" ++ numChannels, { |dryBus, effectBus, pingpongt, pingpongfb, pingpong, cps = 1|
+		var signal = In.ar(dryBus, numChannels);
 		var maxDelayTime = 4;
 		var delaytime, delayfeedback, delayAmp, decayTime, left, right, dry, pingponglpf=3000, leftD, rightD, gate = 1;
 
@@ -202,11 +202,9 @@ they'll come back automatically
 			2, {
 				dry = signal;
 				right = CombL.ar(dry, maxDelayTime*2, delaytime.lag(0.05)*2, decayTime);
-				right = LPF.ar(right, pingponglpf);
+				// right = LPF.ar(right, pingponglpf);
 				left = DelayN.ar(dry + right, maxDelayTime, delaytime.lag(0.05));
-				leftD = Rand(0, 1);
-				rightD = Rand(0, 1);
-				signal = NumChannels.ar(signal + [left*delayAmp*leftD, right*delayAmp*rightD, left*delayAmp*(1-leftD), right*delayAmp*(1-rightD)], ~dirt.numChannels);
+				signal = NumChannels.ar(signal + [left*delayAmp, right*delayAmp], ~dirt.numChannels);
 
 				signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
 
@@ -284,5 +282,5 @@ they'll come back automatically
 
 	"---- core synth defs loaded ----".postln;
 
-	}.value
+}.value
 );
