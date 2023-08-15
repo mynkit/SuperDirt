@@ -34,6 +34,127 @@ Quarks.install("https://github.com/mynkit/SuperDirt.git");
 ```
 Note: this also automatically installs the DirtSamples quark, which contains a large collection of sound files. It downloads them as a zip file. Sometimes, git fails to unpack these samples and they don't get listed. In this case, you have to unpack them "manually".
 
+## Custom
+
+### add effects (distortion, HRTF, etc..)
+
+Add the effect name and arguments in `synths/core-modules.scd`.
+
+```diff_supercollider
++~dirt.addModule('HRTF',
++  { |dirtEvent|
++		dirtEvent.sendSynth('HRTF' ++ numChannels,
++			[
++				theta: ~theta,
++				dis: ~dis,
++				out: ~out
++    ])
++}, { ~theta.notNil });
+```
+
+Add the definition of the effect in `synths/core-synths.scd`.
+
+```diff_supercollider
++  ~decoder = FoaDecoderMatrix.newStereo((100).degrad, (3-sqrt(3))/2);
++  SynthDef("HRTF" ++ numChannels, { |out, theta, dis|
++		var signal, in, left, right, t1, t2, t3, t4, soto, naka, farRate, foa;
++		switch(numChannels,
++			2, {
++				in = In.ar(out, numChannels).asArray.sum;
++				// theta is our angle on the X-Y plane and phi is our elevation
++				theta = (theta-1) * pi;
++				// Encode into our foa signal
++				foa = FoaPanB.ar(in, theta, 0);
++				// decode our signal using our decoder defined above
++				signal = FoaDecode.ar(foa, ~decoder);
++				/*soto = 1 - ((1-dis)*(1-dis));
++				naka = (1-dis)*(1-dis);
++				signal = [
++				(soto*signal[0]) + (naka*in*0.95),
++				(soto*signal[1]) + (naka*in*0.95)
++				];*/
++				ReplaceOut.ar(out, signal)
++			},
++			4, {
++				in = In.ar(out, numChannels).asArray.sum;
++				// disが負の場合は180度
++				theta = if(dis<0, theta+1, theta);
++				theta = theta % 2;
++				theta = if(theta>1, theta-2, theta);
++				t1 = (theta+0.25).abs;
++				t2 = (theta-0.25).abs;
++				t3 = (theta+0.75).abs;
++				t4 = (theta-0.75).abs;
++				t3 = min(t3, 2-t3);
++				t4 = min(t4, 2-t4);
++				dis = dis.abs;
++				farRate = if(dis>1, dis, 1);
++				dis = if(dis>1, 1, dis);
++				signal = [
++					if(t1<=0.5, in*(1 - (2*t1)), 0),
++					if(t2<=0.5, in*(1 - (2*t2)), 0),
++					if(t3<=0.5, in*(1 - (2*t3)), 0),
++					if(t4<=0.5, in*(1 - (2*t4)), 0),
++				];
++				soto = 1 - ((1-dis)*(1-dis));
++				naka = (1-dis)*(1-dis);
++				signal = [
++					(soto*signal[0]) + (naka*in*0.95),
++					(soto*signal[1]) + (naka*in*0.95),
++					(soto*signal[2]) + (naka*in*0.95),
++					(soto*signal[3]) + (naka*in*0.95)
++				];
++				ReplaceOut.ar(out, signal)
++			},{
++				// それ以外のチャンネル数のときはなにもせずに返す
++				in = In.ar(out, numChannels);
++				signal = in;
++				ReplaceOut.ar(out, signal)
++			}
++		)
+```
+
+### add global effects (reverb, delay, etc..)
+
+Add the effect name and arguments to variable `this.globalEffects` in `classes/DirtOrbit.sc`.
+
+```diff_supercollider
+	initDefaultGlobalEffects {
+		this.globalEffects = [
+			// all global effects sleep when the input is quiet for long enough and no parameters are set.
+			GlobalDirtEffect(\dirt_delay, [\delaytime, \delayfeedback, \delaySend, \delayAmp, \lock, \cps]),
+			GlobalDirtEffect(\dirt_reverb, [\size, \room, \dry]),
++			GlobalDirtEffect(\schroeder_reverb, [\scReverb, \ice, \damp]),
+			GlobalDirtEffect(\dirt_leslie, [\leslie, \lrate, \lsize]),
+			GlobalDirtEffect(\dirt_rms, [\rmsReplyRate, \rmsPeakLag]).alwaysRun_(true),
+			GlobalDirtEffect(\dirt_monitor, [\limitertype]).alwaysRun_(true),
+		]
+	}
+```
+
+Add the definition of the effect in `synths/core-synths-global.scd`.
+
+```diff_supercollider
++	SynthDef("schroeder_reverb" ++ numChannels, { |dryBus, effectBus, scReverb, ice, damp|
++		var signal = In.ar(dryBus, numChannels);
++		var chain, in, z, y, oct, gate = 1;
++
++		z = DelayN.ar(signal, 0.048);
++		y = Mix.ar(Array.fill(7,{ CombL.ar(z, 0.1, 1, 15) }));
++		// 32.do({ y = AllpassN.ar(y, 0.050, [0.050.rand, 0.050.rand], 1) });
++		32.do({ y = AllpassN.ar(y, 0.02, [0.02.rand, 0.02.rand], 1) });
++		oct = 1.0 * LeakDC.ar( abs(y) );
++		y = SelectX.ar(ice, [y, ice * oct, DC.ar(0)]);
++		signal = ((1-damp)*signal) + (0.2*y*scReverb);
++
++		signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
++
++		DirtPause.ar(signal, graceTime:4);
++
++		Out.ar(effectBus, signal);
++	}, [\ir, \ir]).add;
+```
+
 ## Simple Setup
 
 `SuperDirt.start`

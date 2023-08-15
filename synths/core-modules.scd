@@ -215,4 +215,15 @@ this may be refacored later.
 		])
 }, { ~phaserrate.notNil });
 
+// add Effect
+~dirt.addModule('HRTF',
+  { |dirtEvent|
+		dirtEvent.sendSynth('HRTF' ++ numChannels,
+			[
+				theta: ~theta,
+				dis: ~dis,
+				out: ~out
+    ])
+}, { ~theta.notNil });
+
 );

@@ -15,7 +15,7 @@ live coding them requires that you have your SuperDirt instance in an environmen
 (
 {
 	var numChannels = ~dirt.numChannels;
-
+  var decoder = FoaDecoderMatrix.newStereo((100).degrad, (3-sqrt(3))/2);
 
 
 	// write variants for different sample buffer sizes
@@ -330,6 +330,66 @@ live coding them requires that you have your SuperDirt instance in an environmen
 
 		ReplaceOut.ar(out, signal);
 	}, [\ir, \ir, \kr, \kr]).add;
+
+  // add Effect
+  SynthDef("HRTF" ++ numChannels, { |out, theta, dis|
+		var signal, in, left, right, t1, t2, t3, t4, soto, naka, farRate, foa;
+		switch(numChannels,
+			2, {
+				in = In.ar(out, numChannels).asArray.sum;
+				// theta is our angle on the X-Y plane and phi is our elevation
+				theta = (theta-1) * pi;
+				// Encode into our foa signal
+				foa = FoaPanB.ar(in, theta, 0);
+				// decode our signal using our decoder defined above
+				signal = FoaDecode.ar(foa, decoder);
+				/*soto = 1 - ((1-dis)*(1-dis));
+				naka = (1-dis)*(1-dis);
+				signal = [
+				(soto*signal[0]) + (naka*in*0.95),
+				(soto*signal[1]) + (naka*in*0.95)
+				];*/
+				ReplaceOut.ar(out, signal)
+			},
+			4, {
+				in = In.ar(out, numChannels).asArray.sum;
+				// disが負の場合は180度
+				theta = if(dis<0, theta+1, theta);
+				theta = theta % 2;
+				theta = if(theta>1, theta-2, theta);
+				t1 = (theta+0.25).abs;
+				t2 = (theta-0.25).abs;
+				t3 = (theta+0.75).abs;
+				t4 = (theta-0.75).abs;
+				t3 = min(t3, 2-t3);
+				t4 = min(t4, 2-t4);
+				dis = dis.abs;
+				farRate = if(dis>1, dis, 1);
+				dis = if(dis>1, 1, dis);
+				signal = [
+					if(t1<=0.5, in*(1 - (2*t1)), 0),
+					if(t2<=0.5, in*(1 - (2*t2)), 0),
+					if(t3<=0.5, in*(1 - (2*t3)), 0),
+					if(t4<=0.5, in*(1 - (2*t4)), 0),
+				];
+				soto = 1 - ((1-dis)*(1-dis));
+				naka = (1-dis)*(1-dis);
+				signal = [
+					(soto*signal[0]) + (naka*in*0.95),
+					(soto*signal[1]) + (naka*in*0.95),
+					(soto*signal[2]) + (naka*in*0.95),
+					(soto*signal[3]) + (naka*in*0.95)
+				];
+				ReplaceOut.ar(out, signal)
+			},{
+				// それ以外のチャンネル数のときはなにもせずに返す
+				in = In.ar(out, numChannels);
+				signal = in;
+				ReplaceOut.ar(out, signal)
+			}
+		)
+
+	}, [\ir]).add;
 
 }.value
 )
