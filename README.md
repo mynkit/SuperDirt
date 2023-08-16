@@ -40,7 +40,7 @@ Note: this also automatically installs the DirtSamples quark, which contains a l
 
 Add the effect name and arguments in `synths/core-modules.scd`.
 
-```diff_supercollider
+```diff
 +~dirt.addModule('HRTF',
 +  { |dirtEvent|
 +		dirtEvent.sendSynth('HRTF' ++ numChannels,
@@ -54,7 +54,7 @@ Add the effect name and arguments in `synths/core-modules.scd`.
 
 Add the definition of the effect in `synths/core-synths.scd`.
 
-```diff_supercollider
+```diff
 +  ~decoder = FoaDecoderMatrix.newStereo((100).degrad, (3-sqrt(3))/2);
 +  SynthDef("HRTF" ++ numChannels, { |out, theta, dis|
 +		var signal, in, left, right, t1, t2, t3, t4, soto, naka, farRate, foa;
@@ -118,7 +118,7 @@ Add the definition of the effect in `synths/core-synths.scd`.
 
 Add the effect name and arguments to variable `this.globalEffects` in `classes/DirtOrbit.sc`.
 
-```diff_supercollider
+```diff
 	initDefaultGlobalEffects {
 		this.globalEffects = [
 			// all global effects sleep when the input is quiet for long enough and no parameters are set.
@@ -134,7 +134,7 @@ Add the effect name and arguments to variable `this.globalEffects` in `classes/D
 
 Add the definition of the effect in `synths/core-synths-global.scd`.
 
-```diff_supercollider
+```diff
 +	SynthDef("schroeder_reverb" ++ numChannels, { |dryBus, effectBus, scReverb, ice, damp|
 +		var signal = In.ar(dryBus, numChannels);
 +		var chain, in, z, y, oct, gate = 1;
