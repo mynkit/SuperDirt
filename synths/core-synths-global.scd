@@ -130,7 +130,7 @@ they'll come back automatically
 	// thanks to Jost Muxfeld and James McCartney
 	// note that "size" is not room size, just the feed level into the room
 
-	SynthDef("dirt_reverb" ++ ~dirt.numChannels, { |dryBus, effectBus, gate = 1, room = 0, size = 0.1, dry = 0|
+	SynthDef("dirt_reverb" ++ ~dirt.numChannels, { |dryBus, effectBus, gate = 1, room = 0, size = 0.1, dry = 0, wet = 0|
 		var in, snd, loop, depth;
 
 		in = In.ar(dryBus, ~dirt.numChannels);
@@ -148,7 +148,7 @@ they'll come back automatically
 		loop = DelayN.ar(loop, 0.3, [0.19, 0.26] + { Rand(-0.003, 0.003) }.dup(2));
 		loop = AllpassN.ar(loop, 0.05, { Rand(0.03, 0.15) }, 2);
 
-		loop = loop + in;
+		loop = loop + (in * ( 1 - wet ));
 		loop = LeakDC.ar(loop);
 
 		LocalOut.ar(loop);
