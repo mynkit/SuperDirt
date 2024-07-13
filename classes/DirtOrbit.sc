@@ -62,6 +62,7 @@ DirtOrbit {
 			GlobalDirtEffect(\pingpong_delay, [\pingpongt, \pingpongfb, \pingpong, \cps]),
 			GlobalDirtEffect(\dirt_reverb, [\size, \room, \dry, \wet]),
 			GlobalDirtEffect(\schroeder_reverb, [\scReverb, \ice, \damp]),
+			GlobalDirtEffect(\residential_area_reverb, [\resi]),
 			// GlobalDirtEffect(\freeverb, [\size, \freeverb, \damp]),
 			GlobalDirtEffect(\dirt_leslie, [\leslie, \lrate, \lsize]),
 			GlobalDirtEffect(\dirt_rms, [\rmsReplyRate, \rmsPeakLag]).alwaysRun_(true),

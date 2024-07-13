@@ -15,7 +15,8 @@ they'll come back automatically
 (
 {
 	var numChannels = ~dirt.numChannels;
-
+	var residentialAreaIRPath=thisProcess.nowExecutingPath.dirname ++ "//residential_area.wav";
+	var residentialAreaConv=EZConv(residentialAreaIRPath, fftSize: 2048);
 
 	/*
 
@@ -175,6 +176,20 @@ they'll come back automatically
 		oct = 1.0 * LeakDC.ar( abs(y) );
 		y = SelectX.ar(ice, [y, ice * oct, DC.ar(0)]);
 		signal = ((1-damp)*signal) + (0.2*y*scReverb);
+
+		signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
+
+		DirtPause.ar(signal, graceTime:4);
+
+		Out.ar(effectBus, signal);
+	}, [\ir, \ir]).add;
+
+	SynthDef("residential_area_reverb" ++ ~dirt.numChannels, { |dryBus, effectBus, resi|
+		var signal = In.ar(dryBus, ~dirt.numChannels);
+		var process, gate = 1;
+
+		process=residentialAreaConv.ar([signal[0],signal[1]],0,1)*0.03; //(signals, leak, mult)
+		signal=(process*resi)+(signal*(1-resi));
 
 		signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
 
