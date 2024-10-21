@@ -18,11 +18,11 @@ they'll come back automatically
 
 	var nowExecutingDirname=thisProcess.nowExecutingPath.dirname;
 
-	var residentialAreaIRPath=nowExecutingDirname ++ "/residential_area.wav";
+	var residentialAreaIRPath=nowExecutingDirname ++ "/IRs/residential_area.wav";
 	var residentialAreaConv=EZConv(residentialAreaIRPath, fftSize: 2048);
 
 	// https://www.openair.hosted.york.ac.uk/?page_id=508
-	var churchIRPath=nowExecutingDirname ++ "/impulseresponseheslingtonchurch-006.wav";
+	var churchIRPath=nowExecutingDirname ++ "/IRs/impulseresponseheslingtonchurch-006.wav";
 	var churchConv=EZConv(churchIRPath, fftSize: 4096);
 
 	/*
