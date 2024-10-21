@@ -15,8 +15,15 @@ they'll come back automatically
 (
 {
 	var numChannels = ~dirt.numChannels;
-	var residentialAreaIRPath=thisProcess.nowExecutingPath.dirname ++ "//residential_area.wav";
+
+	var nowExecutingDirname=thisProcess.nowExecutingPath.dirname;
+
+	var residentialAreaIRPath=nowExecutingDirname ++ "/residential_area.wav";
 	var residentialAreaConv=EZConv(residentialAreaIRPath, fftSize: 2048);
+
+	// https://www.openair.hosted.york.ac.uk/?page_id=508
+	var churchIRPath=nowExecutingDirname ++ "/impulseresponseheslingtonchurch-006.wav";
+	var churchConv=EZConv(churchIRPath, fftSize: 4096);
 
 	/*
 
@@ -190,6 +197,20 @@ they'll come back automatically
 
 		process=residentialAreaConv.ar([signal[0],signal[1]],0,1)*0.03; //(signals, leak, mult)
 		signal=(process*resi)+(signal*(1-resi));
+
+		signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
+
+		DirtPause.ar(signal, graceTime:4);
+
+		Out.ar(effectBus, signal);
+	}, [\ir, \ir]).add;
+
+	SynthDef("church_reverb" ++ ~dirt.numChannels, { |dryBus, effectBus, church|
+		var signal = In.ar(dryBus, ~dirt.numChannels);
+		var process, gate = 1;
+
+		process=churchConv.ar([signal[0],signal[1]],0,1)*0.03; //(signals, leak, mult)
+		signal=(process*church)+(signal*(1-church));
 
 		signal = signal * EnvGen.kr(Env.asr, gate, doneAction:2);
 
